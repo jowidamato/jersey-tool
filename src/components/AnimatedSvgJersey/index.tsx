@@ -85,8 +85,10 @@ export default function AnimatedSvgJersey({
   autoPlay?: boolean;
   preset?: Preset[];
 }) {
+  const [isInteracting, setIsInteracting] = useState(false);
+  const shouldAnimate = autoPlay || isInteracting;
+
   // two faces with their own preset indices
-  const [shouldAnimate, setShouldAnimate] = useState(autoPlay);
 
   const [frontIdx, setFrontIdx] = React.useState(0);
   const [backIdx, setBackIdx] = React.useState(1);
@@ -237,10 +239,10 @@ export default function AnimatedSvgJersey({
     <div
       style={outerStyle}
       className="select-none"
-      onMouseEnter={() => setShouldAnimate(true)}
-      onMouseLeave={() => setShouldAnimate(false)}
-      onFocus={() => setShouldAnimate(true)}
-      onBlur={() => setShouldAnimate(false)}
+      onMouseEnter={() => setIsInteracting(true)}
+      onMouseLeave={() => setIsInteracting(false)}
+      onFocus={() => setIsInteracting(true)}
+      onBlur={() => setIsInteracting(false)}
     >
       <motion.div style={{ ...innerStyle, rotateY: rotY, scale: jerseyScale }}>
         {/* FRONT FACE (visible at 0°/360°) */}
