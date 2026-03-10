@@ -4,7 +4,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Button, Dropdown, Label } from "@heroui/react";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { JerseyColorsProvider } from "@/context/JerseyContext";
@@ -38,12 +38,10 @@ export function Component() {
   const isJerseyRoute = SPORT_ROUTES.some((r) =>
     location.pathname.startsWith(r.path),
   );
-  const routeState = location.state as
-    | {
-        uploadedConfig?: JerseyConfig;
-        resetOnEntry?: boolean;
-      }
-    | null;
+  const routeState = location.state as {
+    uploadedConfig?: JerseyConfig;
+    resetOnEntry?: boolean;
+  } | null;
   const routedUpload = routeState?.uploadedConfig ?? null;
   const resetOnEntry = routeState?.resetOnEntry === true;
   const initial = useMemo(
@@ -68,6 +66,23 @@ export function Component() {
     [currentRoute.id, isJerseyRoute, routedUpload],
   );
 
+  useEffect(() => {
+    if (!isJerseyRoute || !resetOnEntry || routedUpload) return;
+
+    navigate(location.pathname + location.search + location.hash, {
+      replace: true,
+      state: null,
+    });
+  }, [
+    isJerseyRoute,
+    location.hash,
+    location.pathname,
+    location.search,
+    navigate,
+    resetOnEntry,
+    routedUpload,
+  ]);
+
   return (
     <>
       <ScrollRestoration getKey={(location) => location.pathname} />
@@ -79,14 +94,14 @@ export function Component() {
         variant={
           isJerseyRoute
             ? (currentRoute.id as
-              | "football"
-              | "basketball"
-              | "hockey"
-              | "american-football"
-              | "formula-1"
-              | "baseball"
-              | "rugby"
-              | "handball")
+                | "football"
+                | "basketball"
+                | "hockey"
+                | "american-football"
+                | "formula-1"
+                | "baseball"
+                | "rugby"
+                | "handball")
             : undefined
         }
       >
