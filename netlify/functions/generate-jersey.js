@@ -169,7 +169,7 @@ function getFootballLikeStripeDefaults(config) {
   const secondary = isUpperHexColor(config.secondary) ? config.secondary : "";
   const baseColor = isUpperHexColor(config.baseColor)
     ? config.baseColor
-    : (primary || secondary || "");
+    : primary || secondary || "";
 
   if (baseColor && secondary && baseColor === primary) {
     return {
@@ -184,25 +184,32 @@ function getFootballLikeStripeDefaults(config) {
   };
 }
 
-function getDistinctPaletteColors(config, extraColors = []) {
-  return [...new Set(
-    [config.primary, config.secondary, config.baseColor, ...extraColors].filter((value) =>
-      isUpperHexColor(value),
+function getMainTeamColors(config) {
+  return [
+    ...new Set(
+      [config.primary, config.secondary].filter((value) =>
+        isUpperHexColor(value),
+      ),
     ),
-  )];
+  ];
 }
 
-function pickContrastingPaletteColor(config, avoidColor, extraColors = [], currentColor = "") {
-  const palette = getDistinctPaletteColors(config, extraColors);
+function pickOppositeMainTeamColor(config, avoidColor, currentColor = "") {
+  const mainColors = getMainTeamColors(config);
 
-  if (isUpperHexColor(currentColor) && currentColor !== avoidColor) {
+  if (
+    isUpperHexColor(currentColor) &&
+    currentColor !== avoidColor &&
+    mainColors.includes(currentColor)
+  ) {
     return currentColor;
   }
 
   return (
-    palette.find((color) => color !== avoidColor) ||
+    mainColors.find((color) => color !== avoidColor) ||
     currentColor ||
-    palette[0] ||
+    mainColors[0] ||
+    config.baseColor ||
     "#000000"
   );
 }
@@ -221,7 +228,9 @@ function validateBaseShape(config) {
   }
 
   expect(
-    config.state && typeof config.state === "object" && !Array.isArray(config.state),
+    config.state &&
+      typeof config.state === "object" &&
+      !Array.isArray(config.state),
     "Missing or invalid state object",
   );
 
@@ -256,16 +265,33 @@ function validateBaseShape(config) {
     "footballBackNameY",
     "footballBackNumberY",
   ]) {
-    expect(typeof config[key] === "number" && Number.isFinite(config[key]), `Key must be number: ${key}`);
+    expect(
+      typeof config[key] === "number" && Number.isFinite(config[key]),
+      `Key must be number: ${key}`,
+    );
   }
 
-  for (const key of ["stripesPreset", "horizontalStripesPreset", "customShapePreset", "sideStripePreset"]) {
-    expect(typeof config[key] === "string", `Preset key must be string: ${key}`);
+  for (const key of [
+    "stripesPreset",
+    "horizontalStripesPreset",
+    "customShapePreset",
+    "sideStripePreset",
+  ]) {
+    expect(
+      typeof config[key] === "string",
+      `Preset key must be string: ${key}`,
+    );
   }
 
   for (const key of COLOR_KEYS) {
-    expect(typeof config.state[key] === "string", `State key must be string: ${key}`);
-    expect(config[key] === config.state[key], `Top-level/state mismatch for ${key}`);
+    expect(
+      typeof config.state[key] === "string",
+      `State key must be string: ${key}`,
+    );
+    expect(
+      config[key] === config.state[key],
+      `Top-level/state mismatch for ${key}`,
+    );
     if (config[key] !== "") {
       expect(isUpperHexColor(config[key]), `Invalid color format for ${key}`);
     }
@@ -277,12 +303,24 @@ function validateBaseShape(config) {
     "footballBackTextColor",
     "footballBackTextOutlineColor",
   ]) {
-    expect(typeof config.state[key] === "string", `State key must be string: ${key}`);
-    expect(config[key] === config.state[key], `Top-level/state mismatch for ${key}`);
+    expect(
+      typeof config.state[key] === "string",
+      `State key must be string: ${key}`,
+    );
+    expect(
+      config[key] === config.state[key],
+      `Top-level/state mismatch for ${key}`,
+    );
   }
   for (const key of ["footballBackEnabled", "footballBackTextOutlineEnabled"]) {
-    expect(typeof config.state[key] === "boolean", `State key must be boolean: ${key}`);
-    expect(config[key] === config.state[key], `Top-level/state mismatch for ${key}`);
+    expect(
+      typeof config.state[key] === "boolean",
+      `State key must be boolean: ${key}`,
+    );
+    expect(
+      config[key] === config.state[key],
+      `Top-level/state mismatch for ${key}`,
+    );
   }
   for (const key of [
     "footballBackFontWeight",
@@ -294,14 +332,20 @@ function validateBaseShape(config) {
     "footballBackNumberY",
   ]) {
     expect(
-      typeof config.state[key] === "number" && Number.isFinite(config.state[key]),
+      typeof config.state[key] === "number" &&
+        Number.isFinite(config.state[key]),
       `State key must be number: ${key}`,
     );
-    expect(config[key] === config.state[key], `Top-level/state mismatch for ${key}`);
+    expect(
+      config[key] === config.state[key],
+      `Top-level/state mismatch for ${key}`,
+    );
   }
 
-  if (config.primary !== "") expect(isUpperHexColor(config.primary), "Invalid primary color");
-  if (config.secondary !== "") expect(isUpperHexColor(config.secondary), "Invalid secondary color");
+  if (config.primary !== "")
+    expect(isUpperHexColor(config.primary), "Invalid primary color");
+  if (config.secondary !== "")
+    expect(isUpperHexColor(config.secondary), "Invalid secondary color");
 }
 
 function validateFootball(config, sportName = "football") {
@@ -311,7 +355,9 @@ function validateFootball(config, sportName = "football") {
     `Invalid ${sportName} stripesPreset`,
   );
   expect(
-    asSet(["", ...HORIZONTAL_PRESETS_FOOTBALL]).has(config.horizontalStripesPreset),
+    asSet(["", ...HORIZONTAL_PRESETS_FOOTBALL]).has(
+      config.horizontalStripesPreset,
+    ),
     `Invalid ${sportName} horizontalStripesPreset`,
   );
   expect(
@@ -342,9 +388,14 @@ function validateFootball(config, sportName = "football") {
 
 function validateBasketball(config) {
   expect(config.sport === "basketball", "Sport must be basketball");
-  expect(asSet(["", ...STRIPE_PRESETS]).has(config.stripesPreset), "Invalid basketball stripesPreset");
   expect(
-    asSet(["", ...HORIZONTAL_PRESETS_BASKETBALL]).has(config.horizontalStripesPreset),
+    asSet(["", ...STRIPE_PRESETS]).has(config.stripesPreset),
+    "Invalid basketball stripesPreset",
+  );
+  expect(
+    asSet(["", ...HORIZONTAL_PRESETS_BASKETBALL]).has(
+      config.horizontalStripesPreset,
+    ),
     "Invalid basketball horizontalStripesPreset",
   );
   expect(
@@ -355,42 +406,107 @@ function validateBasketball(config) {
     asSet(["", ...SIDE_STRIPE_PRESETS_BASKETBALL]).has(config.sideStripePreset),
     "Invalid basketball sideStripePreset",
   );
-  expect(config.leftSleeveColor === "", "basketball leftSleeveColor must be empty");
-  expect(config.rightSleeveColor === "", "basketball rightSleeveColor must be empty");
-  expect(config.leftSleeveDetailColor === "", "basketball leftSleeveDetailColor must be empty");
-  expect(config.rightSleeveDetailColor === "", "basketball rightSleeveDetailColor must be empty");
-  expect(config.sleeveStripePrimaryColor === "", "basketball sleeveStripePrimaryColor must be empty");
-  expect(config.sleeveStripeSecondaryColor === "", "basketball sleeveStripeSecondaryColor must be empty");
-  expect(config.shoulderPanelColor === "", "basketball shoulderPanelColor must be empty");
+  expect(
+    config.leftSleeveColor === "",
+    "basketball leftSleeveColor must be empty",
+  );
+  expect(
+    config.rightSleeveColor === "",
+    "basketball rightSleeveColor must be empty",
+  );
+  expect(
+    config.leftSleeveDetailColor === "",
+    "basketball leftSleeveDetailColor must be empty",
+  );
+  expect(
+    config.rightSleeveDetailColor === "",
+    "basketball rightSleeveDetailColor must be empty",
+  );
+  expect(
+    config.sleeveStripePrimaryColor === "",
+    "basketball sleeveStripePrimaryColor must be empty",
+  );
+  expect(
+    config.sleeveStripeSecondaryColor === "",
+    "basketball sleeveStripeSecondaryColor must be empty",
+  );
+  expect(
+    config.shoulderPanelColor === "",
+    "basketball shoulderPanelColor must be empty",
+  );
 }
 
 function validateHockey(config) {
   expect(config.sport === "hockey", "Sport must be hockey");
-  expect(asSet(["", ...STRIPE_PRESETS]).has(config.stripesPreset), "Invalid hockey stripesPreset");
   expect(
-    asSet(["", ...HORIZONTAL_PRESETS_HOCKEY]).has(config.horizontalStripesPreset),
+    asSet(["", ...STRIPE_PRESETS]).has(config.stripesPreset),
+    "Invalid hockey stripesPreset",
+  );
+  expect(
+    asSet(["", ...HORIZONTAL_PRESETS_HOCKEY]).has(
+      config.horizontalStripesPreset,
+    ),
     "Invalid hockey horizontalStripesPreset",
   );
   expect(
     asSet(["", ...CUSTOM_PRESETS_HOCKEY]).has(config.customShapePreset),
     "Invalid hockey customShapePreset",
   );
-  expect(config.sideStripePreset === "", "hockey sideStripePreset must be empty");
-  expect(config.sideStripePrimaryColor === "", "hockey sideStripePrimaryColor must be empty");
-  expect(config.sideStripeSecondaryColor === "", "hockey sideStripeSecondaryColor must be empty");
-  expect(config.leftSleeveDetailColor === "", "hockey leftSleeveDetailColor must be empty");
-  expect(config.rightSleeveDetailColor === "", "hockey rightSleeveDetailColor must be empty");
-  expect(config.shoulderPanelColor === "", "hockey shoulderPanelColor must be empty");
-  expect(config.leftNeckCircleColor === "", "hockey leftNeckCircleColor must be empty");
+  expect(
+    config.sideStripePreset === "",
+    "hockey sideStripePreset must be empty",
+  );
+  expect(
+    config.sideStripePrimaryColor === "",
+    "hockey sideStripePrimaryColor must be empty",
+  );
+  expect(
+    config.sideStripeSecondaryColor === "",
+    "hockey sideStripeSecondaryColor must be empty",
+  );
+  expect(
+    config.leftSleeveDetailColor === "",
+    "hockey leftSleeveDetailColor must be empty",
+  );
+  expect(
+    config.rightSleeveDetailColor === "",
+    "hockey rightSleeveDetailColor must be empty",
+  );
+  expect(
+    config.shoulderPanelColor === "",
+    "hockey shoulderPanelColor must be empty",
+  );
+  expect(
+    config.leftNeckCircleColor === "",
+    "hockey leftNeckCircleColor must be empty",
+  );
 }
 
 function validateAmericanFootball(config) {
-  expect(config.sport === "american-football", "Sport must be american-football");
-  expect(config.stripesPreset === "", "american-football stripesPreset must be empty");
-  expect(config.horizontalStripesPreset === "", "american-football horizontalStripesPreset must be empty");
-  expect(config.customShapePreset === "", "american-football customShapePreset must be empty");
-  expect(config.sideStripePreset === "", "american-football sideStripePreset must be empty");
-  expect(config.leftNeckCircleColor === "", "american-football leftNeckCircleColor must be empty");
+  expect(
+    config.sport === "american-football",
+    "Sport must be american-football",
+  );
+  expect(
+    config.stripesPreset === "",
+    "american-football stripesPreset must be empty",
+  );
+  expect(
+    config.horizontalStripesPreset === "",
+    "american-football horizontalStripesPreset must be empty",
+  );
+  expect(
+    config.customShapePreset === "",
+    "american-football customShapePreset must be empty",
+  );
+  expect(
+    config.sideStripePreset === "",
+    "american-football sideStripePreset must be empty",
+  );
+  expect(
+    config.leftNeckCircleColor === "",
+    "american-football leftNeckCircleColor must be empty",
+  );
   for (const key of [
     "leftSleeveColor",
     "rightSleeveColor",
@@ -412,10 +528,22 @@ function validateAmericanFootball(config) {
 function validateFormulaOne(config) {
   expect(config.sport === "formula-1", "Sport must be formula-1");
   expect(config.stripesPreset === "", "formula-1 stripesPreset must be empty");
-  expect(config.horizontalStripesPreset === "", "formula-1 horizontalStripesPreset must be empty");
-  expect(config.customShapePreset === "", "formula-1 customShapePreset must be empty");
-  expect(config.sideStripePreset === "", "formula-1 sideStripePreset must be empty");
-  expect(config.leftNeckCircleColor === "", "formula-1 leftNeckCircleColor must be empty");
+  expect(
+    config.horizontalStripesPreset === "",
+    "formula-1 horizontalStripesPreset must be empty",
+  );
+  expect(
+    config.customShapePreset === "",
+    "formula-1 customShapePreset must be empty",
+  );
+  expect(
+    config.sideStripePreset === "",
+    "formula-1 sideStripePreset must be empty",
+  );
+  expect(
+    config.leftNeckCircleColor === "",
+    "formula-1 leftNeckCircleColor must be empty",
+  );
   for (const key of [
     "leftSleeveColor",
     "rightSleeveColor",
@@ -446,13 +574,19 @@ function wantsAsymmetricSideStripes(designBrief) {
 }
 
 function darkenHex(hex, amount = 0.2) {
-  const value = String(hex || "").trim().toUpperCase();
+  const value = String(hex || "")
+    .trim()
+    .toUpperCase();
   if (!isUpperHexColor(value)) return "";
   const r = parseInt(value.slice(1, 3), 16);
   const g = parseInt(value.slice(3, 5), 16);
   const b = parseInt(value.slice(5, 7), 16);
   const factor = Math.max(0, Math.min(1, 1 - amount));
-  const toHex = (n) => Math.round(n * factor).toString(16).padStart(2, "0").toUpperCase();
+  const toHex = (n) =>
+    Math.round(n * factor)
+      .toString(16)
+      .padStart(2, "0")
+      .toUpperCase();
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -509,24 +643,32 @@ function normalizePlayerText(config, sport, includePlayerText) {
   const enabled = !!includePlayerText && supported;
 
   config.footballBackEnabled = enabled;
-  config.footballBackName = enabled ? (config.footballBackName || "PLAYER") : "";
+  config.footballBackName = enabled ? config.footballBackName || "PLAYER" : "";
   config.footballBackNumber = enabled
-    ? (String(config.footballBackNumber || "10").replace(/[^0-9]/g, "").slice(0, 3) || "10")
+    ? String(config.footballBackNumber || "10")
+        .replace(/[^0-9]/g, "")
+        .slice(0, 3) || "10"
     : "";
-  config.footballBackFontFamily = config.footballBackFontFamily || "Barlow Condensed";
+  config.footballBackFontFamily =
+    config.footballBackFontFamily || "Barlow Condensed";
   config.footballBackFontWeight = Number.isFinite(config.footballBackFontWeight)
     ? config.footballBackFontWeight
     : 700;
   config.footballBackTextColor = config.footballBackTextColor || "";
-  config.footballBackTextOutlineEnabled = !!config.footballBackTextOutlineEnabled;
+  config.footballBackTextOutlineEnabled =
+    !!config.footballBackTextOutlineEnabled;
   config.footballBackTextOutlineColor =
     config.footballBackTextOutlineColor || "#000000";
-  config.footballBackTextOutlineWidth = Number.isFinite(config.footballBackTextOutlineWidth)
+  config.footballBackTextOutlineWidth = Number.isFinite(
+    config.footballBackTextOutlineWidth,
+  )
     ? config.footballBackTextOutlineWidth
     : 2;
 
   const isBasket = sport === "basketball";
-  config.footballBackNameCurveAmount = Number.isFinite(config.footballBackNameCurveAmount)
+  config.footballBackNameCurveAmount = Number.isFinite(
+    config.footballBackNameCurveAmount,
+  )
     ? config.footballBackNameCurveAmount
     : 0;
   config.footballBackNameSize = Number.isFinite(config.footballBackNameSize)
@@ -581,7 +723,10 @@ function normalizeHockeyConfig(config, designBrief) {
         ["#000000", "#FFFFFF"].includes(config.stripeTertiaryColor) &&
         !allowsNeutral))
   ) {
-    config.stripeTertiaryColor = darkenHex(config.baseColor || config.primary, 0.2);
+    config.stripeTertiaryColor = darkenHex(
+      config.baseColor || config.primary,
+      0.2,
+    );
   }
 
   if (
@@ -665,10 +810,13 @@ function normalizeFootballLikeConfig(config, designBrief) {
           ? "defaultVerticalCenterAlt"
           : "defaultVertical";
 
-    if (config.baseColor && isUpperHexColor(config.baseColor)) {
-      config.leftSleeveColor = config.baseColor;
-      config.rightSleeveColor = config.baseColor;
-    }
+    config.baseColor =
+      (isUpperHexColor(config.primary) && config.primary) ||
+      (isUpperHexColor(config.baseColor) && config.baseColor) ||
+      config.secondary ||
+      "#000000";
+    config.leftSleeveColor = config.baseColor;
+    config.rightSleeveColor = config.baseColor;
 
     config.leftSleeveDetailColor = "";
     config.rightSleeveDetailColor = "";
@@ -698,10 +846,9 @@ function normalizeOverlayContrast(config, designBrief) {
     config.customShapePreset !== "";
 
   if (isUpperHexColor(config.baseColor) && hasBodyOverlay) {
-    config.stripePrimaryColor = pickContrastingPaletteColor(
+    config.stripePrimaryColor = pickOppositeMainTeamColor(
       config,
       config.baseColor,
-      [config.neckCircleColor],
       config.stripePrimaryColor,
     );
 
@@ -709,20 +856,18 @@ function normalizeOverlayContrast(config, designBrief) {
       config.stripeSecondaryColor === "" ||
       config.stripeSecondaryColor === config.baseColor
     ) {
-      config.stripeSecondaryColor = pickContrastingPaletteColor(
+      config.stripeSecondaryColor = pickOppositeMainTeamColor(
         config,
         config.baseColor,
-        [config.stripePrimaryColor, config.neckCircleColor],
         config.stripeSecondaryColor,
       );
     }
   }
 
   if (config.sport === "basketball" && config.sideStripePreset !== "") {
-    config.sideStripePrimaryColor = pickContrastingPaletteColor(
+    config.sideStripePrimaryColor = pickOppositeMainTeamColor(
       config,
       config.baseColor,
-      [],
       config.sideStripePrimaryColor,
     );
 
@@ -732,10 +877,9 @@ function normalizeOverlayContrast(config, designBrief) {
       config.sideStripeSecondaryColor === "" ||
       config.sideStripeSecondaryColor === config.baseColor
     ) {
-      config.sideStripeSecondaryColor = pickContrastingPaletteColor(
+      config.sideStripeSecondaryColor = pickOppositeMainTeamColor(
         config,
         config.baseColor,
-        [config.sideStripePrimaryColor],
         config.sideStripeSecondaryColor,
       );
     }
@@ -744,14 +888,9 @@ function normalizeOverlayContrast(config, designBrief) {
   if (config.sport === "hockey" && config.sleeveStripePrimaryColor !== "") {
     const sleeveBase = config.leftSleeveColor || config.baseColor;
     if (isUpperHexColor(sleeveBase)) {
-      config.sleeveStripePrimaryColor = pickContrastingPaletteColor(
+      config.sleeveStripePrimaryColor = pickOppositeMainTeamColor(
         config,
         sleeveBase,
-        [
-          config.rightSleeveColor,
-          config.stripePrimaryColor,
-          config.stripeSecondaryColor,
-        ],
         config.sleeveStripePrimaryColor,
       );
     }
@@ -760,9 +899,17 @@ function normalizeOverlayContrast(config, designBrief) {
   syncStateColors(config);
 }
 
-function validateGeneratedConfig(config, sport, designBrief, includePlayerText) {
+function validateGeneratedConfig(
+  config,
+  sport,
+  designBrief,
+  includePlayerText,
+) {
   validateBaseShape(config);
-  expect(config.sport === sport, `AI returned sport '${config.sport}' but expected '${sport}'`);
+  expect(
+    config.sport === sport,
+    `AI returned sport '${config.sport}' but expected '${sport}'`,
+  );
 
   if (FOOTBALL_LIKE_SPORTS.includes(sport)) validateFootball(config, sport);
   if (sport === "basketball") {
@@ -806,7 +953,10 @@ function validateGeneratedConfig(config, sport, designBrief, includePlayerText) 
       sport === "hockey"
     )
   ) {
-    expect(config.footballBackEnabled === false, "player text must be disabled for this sport");
+    expect(
+      config.footballBackEnabled === false,
+      "player text must be disabled for this sport",
+    );
   }
   if (
     includePlayerText &&
@@ -814,11 +964,19 @@ function validateGeneratedConfig(config, sport, designBrief, includePlayerText) 
       sport === "basketball" ||
       sport === "hockey")
   ) {
-    expect(config.footballBackEnabled === true, "player text must be enabled when requested");
+    expect(
+      config.footballBackEnabled === true,
+      "player text must be enabled when requested",
+    );
   }
 }
 
-function commonPromptHeader(teamName, leagueOrCountry, designBrief, includePlayerText) {
+function commonPromptHeader(
+  teamName,
+  leagueOrCountry,
+  designBrief,
+  includePlayerText,
+) {
   return `You are generating a jersey config JSON for my app.
 Return valid JSON only. No markdown, no comments, no prose.
 
@@ -832,6 +990,8 @@ Global output rules:
 - Output exactly one JSON object.
 - Use uppercase #RRGGBB for every non-empty color field.
 - Any intentionally unused field must be "".
+- primary and secondary must represent the two main club or shirt colors. Do not replace one of them with an accent color just to make shapes visible.
+- Accent or trim colors belong in detail fields like neckCircleColor or stripeTertiaryColor, not in primary/secondary unless they are truly one of the two main kit colors.
 - Include ALL required top-level keys exactly:
 name, sport, primary, secondary, stripesPreset, horizontalStripesPreset, customShapePreset, sideStripePreset, baseColor, leftSleeveColor, rightSleeveColor, leftSleeveDetailColor, rightSleeveDetailColor, neckCircleColor, leftNeckCircleColor, shoulderPanelColor, stripePrimaryColor, stripeSecondaryColor, stripeTertiaryColor, sleeveStripePrimaryColor, sleeveStripeSecondaryColor, sideStripePrimaryColor, sideStripeSecondaryColor, footballBackEnabled, footballBackName, footballBackNumber, footballBackFontFamily, footballBackFontWeight, footballBackTextColor, footballBackTextOutlineEnabled, footballBackTextOutlineColor, footballBackTextOutlineWidth, footballBackNameCurveAmount, footballBackNameSize, footballBackNumberSize, footballBackNameY, footballBackNumberY, state
 - Include state with exactly these keys:
@@ -839,8 +999,19 @@ baseColor, leftSleeveColor, rightSleeveColor, leftSleeveDetailColor, rightSleeve
 - Top-level color fields and state color fields must match exactly.`;
 }
 
-function buildSportPrompt(sport, teamName, leagueOrCountry, designBrief, includePlayerText) {
-  const common = commonPromptHeader(teamName, leagueOrCountry, designBrief, includePlayerText);
+function buildSportPrompt(
+  sport,
+  teamName,
+  leagueOrCountry,
+  designBrief,
+  includePlayerText,
+) {
+  const common = commonPromptHeader(
+    teamName,
+    leagueOrCountry,
+    designBrief,
+    includePlayerText,
+  );
 
   if (FOOTBALL_LIKE_SPORTS.includes(sport)) {
     return `${common}
@@ -860,7 +1031,7 @@ Rules:
 - For vertical presets, default both sleeves to baseColor unless design_brief explicitly asks for contrast sleeves.
 - If customShapePreset is "split": stripePrimaryColor is right split panel, baseColor is left/background torso.
 - Prefer "defaultVertical" or "defaultVerticalCenterAlt" before more complex vertical presets unless explicitly requested.
-- Keep stripes visible: if baseColor already uses primary, default stripePrimaryColor to secondary instead of repeating primary on primary.
+- Keep stripes visible by swapping layer assignment, not by changing the club palette: baseColor should usually default to primary, and stripePrimaryColor should usually use the opposite of base between primary and secondary.
 - Player text (backside):
   - if include_player_text=true: footballBackEnabled=true and set footballBackName/footballBackNumber.
   - defaults: footballBackFontFamily="Barlow Condensed", footballBackFontWeight=700, footballBackTextColor="", footballBackTextOutlineEnabled=false, footballBackTextOutlineColor="#000000", footballBackTextOutlineWidth=2, footballBackNameCurveAmount=0, footballBackNameSize=4, footballBackNumberSize=16, footballBackNameY=11, footballBackNumberY=21.
@@ -883,7 +1054,7 @@ Rules:
 - Side stripe can be used alone or with vertical; avoid combining side stripe with horizontal/custom.
 - Side stripe default is symmetric: use the same color on left and right.
 - Side stripe colors must come from team palette (primary, secondary, or baseColor); avoid random black/white split unless design_brief explicitly requests asymmetry.
-- Keep visible contrast: if baseColor already uses primary, default stripe and side stripe colors to secondary instead of repeating primary on primary.
+- Keep visible contrast by swapping layer assignment, not by changing the club palette: primary and secondary must stay the two main team colors, and stripe/sideStripe colors should use the opposite of base between primary and secondary.
 - Collar supports both full ring (neckCircleColor) and left-half accent (leftNeckCircleColor).
 - If customShapePreset is "split": stripePrimaryColor is right split panel, baseColor is left/background torso.
 - Player text (basketball is front):
@@ -907,7 +1078,7 @@ Rules:
 - Non-applicable fields must be "": leftSleeveDetailColor, rightSleeveDetailColor, shoulderPanelColor, sideStripePrimaryColor, sideStripeSecondaryColor.
 - In most cases, prefer hockey-specific horizontal bottom stripe presets over generic horizontal presets.
 - Default preference order for horizontal stripes: hockeyTripleBottomStripeShade, hockeyTripleBottomStripe, hockeyBottomStripeShade.
-- Keep visible contrast: if baseColor already uses primary, default stripe colors to secondary instead of repeating primary on primary.
+- Keep visible contrast by swapping layer assignment, not by changing the club palette: primary and secondary must stay the two main team colors, and stripe colors should use the opposite of base between primary and secondary.
 - Sleeve stripe guidance:
   - sleeveStripePrimaryColor should be the accent stripe color (usually primary or secondary team color).
   - sleeveStripeSecondaryColor should usually match sleeve body color (leftSleeveColor/rightSleeveColor, often baseColor), not random black/white.
@@ -956,7 +1127,8 @@ Rules:
 
 export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return json(204, {});
-  if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
+  if (event.httpMethod !== "POST")
+    return json(405, { error: "Method not allowed" });
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return json(500, { error: "Missing GEMINI_API_KEY" });
@@ -965,7 +1137,9 @@ export const handler = async (event) => {
     const body = event.body ? JSON.parse(event.body) : {};
     const teamName = String(body.teamName || "").trim();
     const leagueOrCountry = String(body.leagueOrCountry || "").trim();
-    const designBrief = String(body.styleNotes || body.designBrief || "").trim();
+    const designBrief = String(
+      body.styleNotes || body.designBrief || "",
+    ).trim();
     const includePlayerText = Boolean(body.includePlayerText);
     const sport = String(body.sport || "").trim();
 

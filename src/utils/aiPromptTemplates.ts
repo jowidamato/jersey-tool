@@ -21,6 +21,8 @@ Global output rules:
 - Output exactly one JSON object.
 - Use uppercase #RRGGBB for every non-empty color field.
 - Any intentionally unused field must be "".
+- primary and secondary must represent the two main club or shirt colors. Do not replace one of them with an accent color just to make shapes visible.
+- Accent or trim colors belong in detail fields like neckCircleColor or stripeTertiaryColor, not in primary/secondary unless they are truly one of the two main kit colors.
 - Include all required top-level keys:
 name, sport, primary, secondary, stripesPreset, horizontalStripesPreset, customShapePreset, sideStripePreset, baseColor, leftSleeveColor, rightSleeveColor, leftSleeveDetailColor, rightSleeveDetailColor, neckCircleColor, leftNeckCircleColor, shoulderPanelColor, stripePrimaryColor, stripeSecondaryColor, stripeTertiaryColor, sleeveStripePrimaryColor, sleeveStripeSecondaryColor, sideStripePrimaryColor, sideStripeSecondaryColor, footballBackEnabled, footballBackName, footballBackNumber, footballBackFontFamily, footballBackFontWeight, footballBackTextColor, footballBackTextOutlineEnabled, footballBackTextOutlineColor, footballBackTextOutlineWidth, footballBackNameCurveAmount, footballBackNameSize, footballBackNumberSize, footballBackNameY, footballBackNumberY, state
 - Include state keys:
@@ -41,7 +43,7 @@ const SPORT_RULES: Record<SportVariant, string> = {
 - Only set leftNeckCircleColor when design_brief explicitly requests split/asymmetric collar.
 - For vertical presets, default both sleeves to baseColor unless design_brief explicitly asks for contrast sleeves.
 - Prefer defaultVertical or defaultVerticalCenterAlt before detailed variants unless explicitly requested.
-- Keep stripes visible: if baseColor already uses primary, set stripePrimaryColor to secondary by default instead of repeating primary on primary.
+- Keep stripes visible by swapping layer assignment, not by changing the club palette: baseColor should usually default to primary, and stripePrimaryColor should usually use the opposite of base between primary and secondary.
 - For split custom: stripePrimaryColor is right split panel, baseColor is left/background torso.
 - Player text:
   - If include_player_text=true: set footballBackEnabled=true and include backside player text.
@@ -59,7 +61,7 @@ const SPORT_RULES: Record<SportVariant, string> = {
 - Side stripe can be used alone or with vertical; avoid combining side stripe with horizontal/custom.
 - Side stripe default is symmetric: use same color for left and right.
 - Side stripe colors must come from team palette (primary, secondary, or baseColor). Avoid random black/white split unless design_brief explicitly requests asymmetry.
-- Keep visible contrast: if baseColor already uses primary, set stripe and side stripe colors to secondary by default instead of repeating primary on primary.
+- Keep visible contrast by swapping layer assignment, not by changing the club palette: primary and secondary must stay the two main team colors, and stripe/sideStripe colors should use the opposite of base between primary and secondary.
 - Collar supports full ring + optional left-half accent.
 - Player text:
   - If include_player_text=true: set footballBackEnabled=true and include front player text.
@@ -76,7 +78,7 @@ const SPORT_RULES: Record<SportVariant, string> = {
 - Must be "": leftSleeveDetailColor, rightSleeveDetailColor, shoulderPanelColor.
 - In most cases, prefer hockey-specific horizontal bottom stripe presets over generic horizontal presets.
 - Default preference order for horizontal stripes: hockeyTripleBottomStripeShade, hockeyTripleBottomStripe, hockeyBottomStripeShade.
-- Keep visible contrast: if baseColor already uses primary, set stripe colors to secondary by default instead of repeating primary on primary.
+- Keep visible contrast by swapping layer assignment, not by changing the club palette: primary and secondary must stay the two main team colors, and stripe colors should use the opposite of base between primary and secondary.
 - In most cases, include sleeve stripe colors as part of the hockey look (set sleeveStripePrimaryColor and sleeveStripeSecondaryColor from team palette).
 - For shaded hockey presets, stripeTertiaryColor controls shade.
 - Player text:
@@ -108,7 +110,7 @@ const SPORT_RULES: Record<SportVariant, string> = {
 - Collar defaults: use only neckCircleColor and keep leftNeckCircleColor="".
 - Only set leftNeckCircleColor when design_brief explicitly requests split/asymmetric collar.
 - Prefer defaultVertical or defaultVerticalCenterAlt before detailed variants unless explicitly requested.
-- Keep stripes visible: if baseColor already uses primary, set stripePrimaryColor to secondary by default instead of repeating primary on primary.
+- Keep stripes visible by swapping layer assignment, not by changing the club palette: baseColor should usually default to primary, and stripePrimaryColor should usually use the opposite of base between primary and secondary.
 - Player text:
   - If include_player_text=true: set footballBackEnabled=true and include backside player text.
   - Defaults: footballBackFontFamily="Barlow Condensed", footballBackFontWeight=700, footballBackTextColor="", footballBackTextOutlineEnabled=false, footballBackTextOutlineColor="#000000", footballBackTextOutlineWidth=2, footballBackNameCurveAmount=0, footballBackNameSize=4, footballBackNumberSize=16, footballBackNameY=11, footballBackNumberY=21.
@@ -126,7 +128,7 @@ const SPORT_RULES: Record<SportVariant, string> = {
 - Collar defaults: use only neckCircleColor and keep leftNeckCircleColor="".
 - Only set leftNeckCircleColor when design_brief explicitly requests split/asymmetric collar.
 - Prefer defaultVertical or defaultVerticalCenterAlt before detailed variants unless explicitly requested.
-- Keep stripes visible: if baseColor already uses primary, set stripePrimaryColor to secondary by default instead of repeating primary on primary.
+- Keep stripes visible by swapping layer assignment, not by changing the club palette: baseColor should usually default to primary, and stripePrimaryColor should usually use the opposite of base between primary and secondary.
 - Player text:
   - If include_player_text=true: set footballBackEnabled=true and include backside player text.
   - Defaults: footballBackFontFamily="Barlow Condensed", footballBackFontWeight=700, footballBackTextColor="", footballBackTextOutlineEnabled=false, footballBackTextOutlineColor="#000000", footballBackTextOutlineWidth=2, footballBackNameCurveAmount=0, footballBackNameSize=4, footballBackNumberSize=16, footballBackNameY=11, footballBackNumberY=21.
@@ -144,7 +146,7 @@ const SPORT_RULES: Record<SportVariant, string> = {
 - Collar defaults: use only neckCircleColor and keep leftNeckCircleColor="".
 - Only set leftNeckCircleColor when design_brief explicitly requests split/asymmetric collar.
 - Prefer defaultVertical or defaultVerticalCenterAlt before detailed variants unless explicitly requested.
-- Keep stripes visible: if baseColor already uses primary, set stripePrimaryColor to secondary by default instead of repeating primary on primary.
+- Keep stripes visible by swapping layer assignment, not by changing the club palette: baseColor should usually default to primary, and stripePrimaryColor should usually use the opposite of base between primary and secondary.
 - Player text:
   - If include_player_text=true: set footballBackEnabled=true and include backside player text.
   - Defaults: footballBackFontFamily="Barlow Condensed", footballBackFontWeight=700, footballBackTextColor="", footballBackTextOutlineEnabled=false, footballBackTextOutlineColor="#000000", footballBackTextOutlineWidth=2, footballBackNameCurveAmount=0, footballBackNameSize=4, footballBackNumberSize=16, footballBackNameY=11, footballBackNumberY=21.
