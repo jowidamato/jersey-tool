@@ -127,7 +127,7 @@ const Base: React.FC<JerseyProps> = ({
         : withHash;
     return /^#[0-9A-Fa-f]{6}$/.test(normalized) ? normalized : "";
   };
-  const darker = darken(baseColor, 0.2);
+  const darker = darken(baseColor, 0.15);
   const largeShoulderPanel = true;
   const isBasketball = variant === "basketball";
   const isHockey = variant === "hockey";
@@ -609,7 +609,7 @@ const Base: React.FC<JerseyProps> = ({
             variant,
           )}
 
-        {customOverlayEnabled && customOverlaySvg && !isFootballBack ? (
+        {customOverlayEnabled && customOverlaySvg ? (
           <g
             transform={`translate(${overlayCenterX} ${overlayCenterY}) rotate(${safeUserRotation}) scale(${safeUserScale}) translate(${-fittedWidth / 2} ${-fittedHeight / 2})`}
           >

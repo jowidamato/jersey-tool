@@ -269,9 +269,16 @@ export function renderStripePreset(
         return (
           <>
             <RectIf
+              x="24.5"
+              y="2"
+              width="1"
+              height="36"
+              fill={stripePrimaryColor}
+            />
+            <RectIf
               x="22"
               y="2"
-              width="1.5"
+              width="1"
               height="36"
               fill={stripePrimaryColor}
             />
@@ -320,7 +327,14 @@ export function renderStripePreset(
             <RectIf
               x="4.5"
               y="2"
-              width="1.5"
+              width="1"
+              height="36"
+              fill={stripePrimaryColor}
+            />
+            <RectIf
+              x="2"
+              y="2"
+              width="1"
               height="36"
               fill={stripePrimaryColor}
             />

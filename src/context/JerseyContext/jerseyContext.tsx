@@ -221,7 +221,7 @@ const initialState: JerseyColorState = {
   sport: undefined,
   sr_jersey: undefined,
   id: undefined,
-  theme: { primary: undefined, secondary: undefined },
+  theme: { primary: "#000000", secondary: "#FFFFFF" },
   baseColor: { value: undefined, enabled: false, shouldToggle: true },
   leftSleeveColor: { value: undefined, enabled: false, shouldToggle: true },
   rightSleeveColor: { value: undefined, enabled: false, shouldToggle: true },
@@ -504,8 +504,7 @@ function reducer(state: JerseyColorState, action: Action): JerseyColorState {
           action.fontFamily ?? state.footballBackFontFamily,
         footballBackFontWeight:
           action.fontWeight ?? state.footballBackFontWeight,
-        footballBackTextColor:
-          action.textColor ?? state.footballBackTextColor,
+        footballBackTextColor: action.textColor ?? state.footballBackTextColor,
         footballBackTextOutlineEnabled:
           action.textOutlineEnabled ?? state.footballBackTextOutlineEnabled,
         footballBackTextOutlineColor:
@@ -708,8 +707,7 @@ function mergeInitial(
     customOverlayScale: patch.customOverlayScale ?? base.customOverlayScale,
     customOverlayRotation:
       patch.customOverlayRotation ?? base.customOverlayRotation,
-    footballBackEnabled:
-      patch.footballBackEnabled ?? base.footballBackEnabled,
+    footballBackEnabled: patch.footballBackEnabled ?? base.footballBackEnabled,
     footballBackName: patch.footballBackName ?? base.footballBackName,
     footballBackNumber: patch.footballBackNumber ?? base.footballBackNumber,
     footballBackFontFamily:
@@ -719,7 +717,8 @@ function mergeInitial(
     footballBackTextColor:
       patch.footballBackTextColor ?? base.footballBackTextColor,
     footballBackTextOutlineEnabled:
-      patch.footballBackTextOutlineEnabled ?? base.footballBackTextOutlineEnabled,
+      patch.footballBackTextOutlineEnabled ??
+      base.footballBackTextOutlineEnabled,
     footballBackTextOutlineColor:
       patch.footballBackTextOutlineColor ?? base.footballBackTextOutlineColor,
     footballBackTextOutlineWidth:
@@ -731,8 +730,7 @@ function mergeInitial(
     footballBackNumberSize:
       patch.footballBackNumberSize ?? base.footballBackNumberSize,
     footballBackNameY: patch.footballBackNameY ?? base.footballBackNameY,
-    footballBackNumberY:
-      patch.footballBackNumberY ?? base.footballBackNumberY,
+    footballBackNumberY: patch.footballBackNumberY ?? base.footballBackNumberY,
   };
 }
 

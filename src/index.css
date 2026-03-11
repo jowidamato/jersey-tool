@@ -109,6 +109,12 @@ body {
   }
 }
 
+@layer components {
+  .custom-switch {
+    @apply justify-between w-full;
+  }
+}
+
 #react-sheet-slide > div > div {
   --width: min(100%, 640px);
   --z-index: 1000;

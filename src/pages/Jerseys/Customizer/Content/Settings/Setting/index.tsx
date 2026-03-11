@@ -155,36 +155,38 @@ function Setting({
       )}
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center overflow-visible gap-3">
-          <div
-            className={classNames(
-              "shrink-0 overflow-visible transition-[width,margin] duration-300 ease-out",
-              open ? "w-8 -ml-2" : "w-10 -ml-6",
-            )}
-            aria-hidden={!icon ? true : undefined}
-          >
-            <div
-              className={classNames(
-                "grid place-items-center rounded-full -mt-2 ",
-                "h-10 w-10",
-                "transition-transform duration-300 ease-out will-change-transform",
-                "transition-opacity",
-                open ? "scale-60 opacity-100" : "scale-100 opacity-100",
-              )}
-            >
-              {icon}
-            </div>
-          </div>
-
-          <div className="text-sm font-semibold py-3">{label}</div>
-        </div>
-
         <Switch
           isSelected={open}
           aria-label={`Toggle ${label}`}
           onChange={onToggle}
           isDisabled={isDisabled}
+          className="custom-switch"
         >
+          <Switch.Content>
+            <div className="flex items-center overflow-visible gap-3">
+              <div
+                className={classNames(
+                  "shrink-0 overflow-visible transition-[width,margin] duration-300 ease-out",
+                  open ? "w-8 -ml-2" : "w-10 -ml-6",
+                )}
+                aria-hidden={!icon ? true : undefined}
+              >
+                <div
+                  className={classNames(
+                    "grid place-items-center rounded-full -mt-2 ",
+                    "h-10 w-10",
+                    "transition-transform duration-300 ease-out will-change-transform",
+                    "transition-opacity",
+                    open ? "scale-60 opacity-100" : "scale-100 opacity-100",
+                  )}
+                >
+                  {icon}
+                </div>
+              </div>
+
+              <div className="text-sm font-semibold py-3">{label}</div>
+            </div>
+          </Switch.Content>
           <Switch.Control>
             <Switch.Thumb />
           </Switch.Control>

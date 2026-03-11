@@ -31,6 +31,10 @@ const SPORT_ROUTES = [
 export function Component() {
   const location = useLocation();
   const navigate = useNavigate();
+  const sortedSportRoutes = useMemo(
+    () => [...SPORT_ROUTES].sort((a, b) => a.label.localeCompare(b.label)),
+    [],
+  );
 
   const currentRoute =
     SPORT_ROUTES.find((r) => location.pathname.startsWith(r.path)) ??
@@ -151,7 +155,7 @@ export function Component() {
                             if (route) navigate(route.path);
                           }}
                         >
-                          {SPORT_ROUTES.map((route) => (
+                          {sortedSportRoutes.map((route) => (
                             <Dropdown.Item
                               key={route.id}
                               id={route.id}

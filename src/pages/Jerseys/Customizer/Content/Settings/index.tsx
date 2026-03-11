@@ -101,61 +101,67 @@ export function Settings({
       ) : null}
       <div className="flex w-full">
         {part.primaryKey && (
-          <div className="flex flex-col sm:flex-row pb-2 w-full gap-2">
-            <ColorPickerComponent
-              key={part.primaryKey.field}
-              field={part.primaryKey.field}
-              label={part.primaryKey.label}
-              setColor={setColorCallback}
-              value={effectiveColor(part.primaryKey.field)}
-              defaultColors={{
-                primary: state.theme.primary,
-                secondary: state.theme.secondary,
-              }}
-            />
-
-            {part.hasColorSwitcher && part.primaryKey && part.secondaryKey && (
-              <div className="self-center hidden sm:flex">
-                <ColorSwitcher
-                  primaryColor={{
-                    field: part.primaryKey.field,
-                    color: effectiveColor(part.primaryKey.field),
-                  }}
-                  secondaryColor={{
-                    field: part.secondaryKey.field,
-                    color: effectiveColor(part.secondaryKey.field),
-                  }}
-                  setColor={setColorCallback}
-                />
-              </div>
-            )}
-
-            {part.secondaryKey && (
+          <div className="flex flex-col pb-2 w-full gap-2">
+            <div className="flex flex-col sm:flex-row w-full gap-2">
               <ColorPickerComponent
-                key={part.secondaryKey.field}
-                field={part.secondaryKey.field}
-                label={part.secondaryKey.label}
+                key={part.primaryKey.field}
+                field={part.primaryKey.field}
+                label={part.primaryKey.label}
                 setColor={setColorCallback}
-                value={effectiveColor(part.secondaryKey.field)}
+                value={effectiveColor(part.primaryKey.field)}
                 defaultColors={{
                   primary: state.theme.primary,
                   secondary: state.theme.secondary,
                 }}
               />
-            )}
+
+              {part.hasColorSwitcher &&
+                part.primaryKey &&
+                part.secondaryKey && (
+                  <div className="self-center hidden sm:flex">
+                    <ColorSwitcher
+                      primaryColor={{
+                        field: part.primaryKey.field,
+                        color: effectiveColor(part.primaryKey.field),
+                      }}
+                      secondaryColor={{
+                        field: part.secondaryKey.field,
+                        color: effectiveColor(part.secondaryKey.field),
+                      }}
+                      setColor={setColorCallback}
+                    />
+                  </div>
+                )}
+
+              {part.secondaryKey && (
+                <ColorPickerComponent
+                  key={part.secondaryKey.field}
+                  field={part.secondaryKey.field}
+                  label={part.secondaryKey.label}
+                  setColor={setColorCallback}
+                  value={effectiveColor(part.secondaryKey.field)}
+                  defaultColors={{
+                    primary: state.theme.primary,
+                    secondary: state.theme.secondary,
+                  }}
+                />
+              )}
+            </div>
 
             {"tertiaryKey" in part && part.tertiaryKey && (
-              <ColorPickerComponent
-                key={part.tertiaryKey.field}
-                field={part.tertiaryKey.field}
-                label={part.tertiaryKey.label}
-                setColor={setColorCallback}
-                value={effectiveColor(part.tertiaryKey.field)}
-                defaultColors={{
-                  primary: state.theme.primary,
-                  secondary: state.theme.secondary,
-                }}
-              />
+              <div className="w-full items-center">
+                <ColorPickerComponent
+                  key={part.tertiaryKey.field}
+                  field={part.tertiaryKey.field}
+                  label={part.tertiaryKey.label}
+                  setColor={setColorCallback}
+                  value={effectiveColor(part.tertiaryKey.field)}
+                  defaultColors={{
+                    primary: state.theme.primary,
+                    secondary: state.theme.secondary,
+                  }}
+                />
+              </div>
             )}
           </div>
         )}
