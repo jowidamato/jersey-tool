@@ -27,13 +27,7 @@ export function Preview({
       ? {
           baseColor: config.theme.primary ?? "#274FD1",
           neckCircleColor: config.theme.secondary ?? "#9D7D2D",
-          customOverlayEnabled: config.customOverlayEnabled,
-          customOverlaySvg: config.customOverlaySvg,
-          customOverlayViewBox: config.customOverlayViewBox,
-          customOverlayX: config.customOverlayX,
-          customOverlayY: config.customOverlayY,
-          customOverlayScale: config.customOverlayScale,
-          customOverlayRotation: config.customOverlayRotation,
+          customOverlays: config.customOverlays,
         }
       : variant === "formula-1"
         ? {
@@ -41,13 +35,7 @@ export function Preview({
             neckCircleColor: config.neckCircleColor.enabled
               ? config.neckCircleColor.value
               : undefined,
-            customOverlayEnabled: config.customOverlayEnabled,
-            customOverlaySvg: config.customOverlaySvg,
-            customOverlayViewBox: config.customOverlayViewBox,
-            customOverlayX: config.customOverlayX,
-            customOverlayY: config.customOverlayY,
-            customOverlayScale: config.customOverlayScale,
-            customOverlayRotation: config.customOverlayRotation,
+            customOverlays: config.customOverlays,
           }
         : baseProps;
 

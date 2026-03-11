@@ -1,4 +1,5 @@
 import type {
+  CustomOverlayLayer,
   CustomShapePreset,
   HorizontalStripePreset,
   SideStripePreset,
@@ -47,6 +48,8 @@ export type JerseyConfig = {
   customOverlayY?: number;
   customOverlayScale?: number;
   customOverlayRotation?: number;
+  customOverlays?: CustomOverlayLayer[];
+  customOverlayActiveId?: string;
   footballBackEnabled?: boolean;
   footballBackName?: string;
   footballBackNumber?: string;
@@ -233,6 +236,14 @@ export function parseJerseyConfig(raw: unknown): JerseyConfig {
     ),
     customOverlayRotation: coerceNumber(
       payload.customOverlayRotation ?? nestedState?.customOverlayRotation,
+    ),
+    customOverlays: Array.isArray(payload.customOverlays)
+      ? (payload.customOverlays as CustomOverlayLayer[])
+      : Array.isArray(nestedState?.customOverlays)
+        ? (nestedState.customOverlays as CustomOverlayLayer[])
+        : undefined,
+    customOverlayActiveId: coerceString(
+      payload.customOverlayActiveId ?? nestedState?.customOverlayActiveId,
     ),
     footballBackEnabled:
       typeof payload.footballBackEnabled === "boolean"

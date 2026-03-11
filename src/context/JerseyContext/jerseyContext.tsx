@@ -1,6 +1,8 @@
 import {
+  type CustomOverlayLayer,
   type JerseyColorState,
   type JerseyFieldKey,
+  type JerseyResponse,
   type Theme,
   DEFAULT_SOURCE,
   downloadSvg,
@@ -10,6 +12,21 @@ import { downloadJson } from "@/utils/utils";
 import { toast } from "@heroui/react";
 import React, { createContext, useReducer, useRef } from "react";
 type JerseySport = NonNullable<JerseyColorState["sport"]>;
+const createOverlayLayer = (
+  id: string,
+  svg?: string,
+  viewBox?: string,
+): CustomOverlayLayer => ({
+  id,
+  name: "Overlay",
+  enabled: true,
+  svg,
+  viewBox,
+  x: 0,
+  y: 0,
+  scale: 1,
+  rotation: 0,
+});
 type JerseyDraft = {
   id: string;
   name: string;
@@ -18,6 +35,19 @@ type JerseyDraft = {
   config: JerseyColorState;
 };
 type StoredJerseyDraft = JerseyDraft;
+type LegacyOverlayPatch = Partial<
+  Pick<
+    JerseyResponse,
+    | "customOverlayEnabled"
+    | "customOverlaySvg"
+    | "customOverlayViewBox"
+    | "customOverlayX"
+    | "customOverlayY"
+    | "customOverlayScale"
+    | "customOverlayRotation"
+  >
+>;
+type InitialPatch = Partial<JerseyColorState> & LegacyOverlayPatch;
 
 const IGNORED_KEYS: (keyof JerseyColorState)[] = [
   "name",
@@ -165,7 +195,7 @@ function getDraftByName(
   return getStoredDraft(id);
 }
 
-function hasInitialContent(initial?: Partial<JerseyColorState> | null) {
+function hasInitialContent(initial?: InitialPatch | null) {
   if (!initial) return false;
   if (initial.name?.trim()) return true;
   if (
@@ -193,6 +223,7 @@ function hasInitialContent(initial?: Partial<JerseyColorState> | null) {
     (initial.footballBackNumberSize ?? 16) !== 16 ||
     (initial.footballBackNameY ?? 11) !== 11 ||
     (initial.footballBackNumberY ?? 21) !== 21 ||
+    !!initial.customOverlays?.length ||
     initial.customOverlayEnabled ||
     initial.customOverlaySvg ||
     (initial.customOverlayX ?? 0) !== 0 ||
@@ -303,13 +334,8 @@ const initialState: JerseyColorState = {
   horizontalStripesPreset: undefined,
   customShapePreset: undefined,
   sideStripePreset: undefined,
-  customOverlayEnabled: false,
-  customOverlaySvg: undefined,
-  customOverlayViewBox: undefined,
-  customOverlayX: 0,
-  customOverlayY: 0,
-  customOverlayScale: 1,
-  customOverlayRotation: 0,
+  customOverlays: [],
+  customOverlayActiveId: undefined,
   footballBackEnabled: false,
   footballBackName: "",
   footballBackNumber: "",
@@ -412,7 +438,19 @@ type Action =
       viewBox?: string;
     }
   | {
+      type: "addCustomOverlay";
+      id: string;
+      svg?: string;
+      viewBox?: string;
+    }
+  | { type: "removeCustomOverlay"; id: string }
+  | { type: "setActiveCustomOverlay"; id?: string }
+  | { type: "setCustomOverlayOrder"; ids: string[] }
+  | { type: "moveCustomOverlay"; id: string; direction: "up" | "down" }
+  | { type: "setCustomOverlayEnabled"; id: string; enabled: boolean }
+  | {
       type: "setCustomOverlayTransform";
+      id?: string;
       x?: number;
       y?: number;
       scale?: number;
@@ -439,7 +477,7 @@ type Action =
       type: "clearTemplate";
       template: "vertical" | "horizontal" | "custom" | "sidestripe";
     }
-  | { type: "hydrate"; payload: Partial<JerseyColorState> | null }
+  | { type: "hydrate"; payload: InitialPatch | null }
   | { type: "reset" };
 
 function reducer(state: JerseyColorState, action: Action): JerseyColorState {
@@ -527,24 +565,126 @@ function reducer(state: JerseyColorState, action: Action): JerseyColorState {
     }
     case "setCustomOverlay": {
       const { enabled, svg, viewBox } = action;
+      if (!enabled) {
+        return {
+          ...state,
+          customOverlays: [],
+          customOverlayActiveId: undefined,
+        } as JerseyColorState;
+      }
+      const activeId =
+        state.customOverlayActiveId ??
+        state.customOverlays[0]?.id ??
+        (svg ? "overlay-1" : undefined);
+      const existingIndex = state.customOverlays.findIndex(
+        (overlay) => overlay.id === activeId,
+      );
+      if (existingIndex >= 0 && activeId) {
+        const next = [...state.customOverlays];
+        next[existingIndex] = {
+          ...next[existingIndex],
+          enabled: true,
+          svg: svg ?? next[existingIndex].svg,
+          viewBox: viewBox ?? next[existingIndex].viewBox,
+        };
+        return {
+          ...state,
+          customOverlays: next,
+          customOverlayActiveId: activeId,
+        } as JerseyColorState;
+      }
       return {
         ...state,
-        customOverlayEnabled: enabled,
-        customOverlaySvg: svg,
-        customOverlayViewBox: viewBox,
-        customOverlayX: svg ? state.customOverlayX : 0,
-        customOverlayY: svg ? state.customOverlayY : 0,
-        customOverlayScale: svg ? state.customOverlayScale : 1,
-        customOverlayRotation: svg ? state.customOverlayRotation : 0,
+        customOverlays: activeId
+          ? [createOverlayLayer(activeId, svg, viewBox)]
+          : state.customOverlays,
+        customOverlayActiveId: activeId,
       } as JerseyColorState;
     }
-    case "setCustomOverlayTransform": {
+    case "addCustomOverlay": {
       return {
         ...state,
-        customOverlayX: action.x ?? state.customOverlayX,
-        customOverlayY: action.y ?? state.customOverlayY,
-        customOverlayScale: action.scale ?? state.customOverlayScale,
-        customOverlayRotation: action.rotation ?? state.customOverlayRotation,
+        customOverlays: [
+          ...state.customOverlays,
+          createOverlayLayer(action.id, action.svg, action.viewBox),
+        ],
+        customOverlayActiveId: action.id,
+      } as JerseyColorState;
+    }
+    case "removeCustomOverlay": {
+      const next = state.customOverlays.filter(
+        (overlay) => overlay.id !== action.id,
+      );
+      return {
+        ...state,
+        customOverlays: next,
+        customOverlayActiveId:
+          state.customOverlayActiveId === action.id
+            ? next[0]?.id
+            : state.customOverlayActiveId,
+      } as JerseyColorState;
+    }
+    case "setActiveCustomOverlay":
+      return {
+        ...state,
+        customOverlayActiveId: action.id,
+      } as JerseyColorState;
+    case "setCustomOverlayOrder": {
+      const overlayMap = new Map(
+        state.customOverlays.map((overlay) => [overlay.id, overlay]),
+      );
+      const ordered = action.ids
+        .map((id) => overlayMap.get(id))
+        .filter((overlay): overlay is CustomOverlayLayer => !!overlay);
+      const remaining = state.customOverlays.filter(
+        (overlay) => !action.ids.includes(overlay.id),
+      );
+      return {
+        ...state,
+        customOverlays: [...ordered, ...remaining],
+      } as JerseyColorState;
+    }
+    case "moveCustomOverlay": {
+      const index = state.customOverlays.findIndex((o) => o.id === action.id);
+      if (index < 0) return state;
+      const target =
+        action.direction === "up"
+          ? Math.max(0, index - 1)
+          : Math.min(state.customOverlays.length - 1, index + 1);
+      if (target === index) return state;
+      const next = [...state.customOverlays];
+      const [overlay] = next.splice(index, 1);
+      next.splice(target, 0, overlay);
+      return {
+        ...state,
+        customOverlays: next,
+      } as JerseyColorState;
+    }
+    case "setCustomOverlayEnabled":
+      return {
+        ...state,
+        customOverlays: state.customOverlays.map((overlay) =>
+          overlay.id === action.id
+            ? { ...overlay, enabled: action.enabled }
+            : overlay,
+        ),
+      } as JerseyColorState;
+    case "setCustomOverlayTransform": {
+      const activeId = action.id ?? state.customOverlayActiveId;
+      if (!activeId) return state;
+      return {
+        ...state,
+        customOverlays: state.customOverlays.map((overlay) =>
+          overlay.id === activeId
+            ? {
+                ...overlay,
+                x: action.x ?? overlay.x,
+                y: action.y ?? overlay.y,
+                scale: action.scale ?? overlay.scale,
+                rotation: action.rotation ?? overlay.rotation,
+              }
+            : overlay,
+        ),
       } as JerseyColorState;
     }
     case "setFootballBack": {
@@ -632,6 +772,12 @@ type JerseyColorsContextValue = {
   setCustomShapeTemplate: (preset: string) => void;
   setSideStripeTemplate: (preset: string) => void;
   setCustomOverlay: (enabled: boolean, svg?: string, viewBox?: string) => void;
+  addCustomOverlay: (svg?: string, viewBox?: string) => void;
+  removeCustomOverlay: (id: string) => void;
+  setActiveCustomOverlay: (id?: string) => void;
+  setCustomOverlayOrder: (ids: string[]) => void;
+  moveCustomOverlay: (id: string, direction: "up" | "down") => void;
+  setCustomOverlayEnabled: (id: string, enabled: boolean) => void;
   setCustomOverlayTransform: (
     patch: Partial<{
       x: number;
@@ -669,7 +815,7 @@ type JerseyColorsContextValue = {
   setSvgRef: (el: SVGSVGElement | null) => void;
   downloadSvg: () => void;
   downloadJson: () => void;
-  hydrateFromConfig: (partial: Partial<JerseyColorState>) => void;
+  hydrateFromConfig: (partial: InitialPatch) => void;
   flushDraftSave: () => void;
   drafts: JerseyDraft[];
   loadDraft: (id: string) => JerseyDraft | undefined;
@@ -684,7 +830,7 @@ const JerseyColorsContext = createContext<JerseyColorsContextValue | null>(
 
 function mergeInitial(
   base: JerseyColorState,
-  patch?: Partial<JerseyColorState> | null,
+  patch?: InitialPatch | null,
 ): JerseyColorState {
   if (!patch) return base;
   return {
@@ -764,16 +910,27 @@ function mergeInitial(
       patch.horizontalStripesPreset ?? base.horizontalStripesPreset,
     customShapePreset: patch.customShapePreset ?? base.customShapePreset,
     sideStripePreset: patch.sideStripePreset ?? base.sideStripePreset,
-    customOverlayEnabled:
-      patch.customOverlayEnabled ?? base.customOverlayEnabled,
-    customOverlaySvg: patch.customOverlaySvg ?? base.customOverlaySvg,
-    customOverlayViewBox:
-      patch.customOverlayViewBox ?? base.customOverlayViewBox,
-    customOverlayX: patch.customOverlayX ?? base.customOverlayX,
-    customOverlayY: patch.customOverlayY ?? base.customOverlayY,
-    customOverlayScale: patch.customOverlayScale ?? base.customOverlayScale,
-    customOverlayRotation:
-      patch.customOverlayRotation ?? base.customOverlayRotation,
+    customOverlays:
+      patch.customOverlays ??
+      (patch.customOverlaySvg
+        ? [
+            createOverlayLayer(
+              "overlay-legacy",
+              patch.customOverlaySvg,
+              patch.customOverlayViewBox,
+            ),
+          ].map((overlay) => ({
+            ...overlay,
+            enabled: patch.customOverlayEnabled ?? true,
+            x: patch.customOverlayX ?? 0,
+            y: patch.customOverlayY ?? 0,
+            scale: patch.customOverlayScale ?? 1,
+            rotation: patch.customOverlayRotation ?? 0,
+          }))
+        : base.customOverlays),
+    customOverlayActiveId:
+      patch.customOverlayActiveId ??
+      (patch.customOverlays?.[0]?.id ?? base.customOverlayActiveId),
     footballBackEnabled: patch.footballBackEnabled ?? base.footballBackEnabled,
     footballBackName: patch.footballBackName ?? base.footballBackName,
     footballBackNumber: patch.footballBackNumber ?? base.footballBackNumber,
@@ -873,8 +1030,7 @@ const JerseyColorsProvider: React.FC<{
   }, [refreshDrafts, state]);
 
   const hydrateFromConfig = React.useCallback(
-    (partial: Partial<JerseyColorState>) =>
-      dispatch({ type: "hydrate", payload: partial }),
+    (partial: InitialPatch) => dispatch({ type: "hydrate", payload: partial }),
     [],
   );
 
@@ -998,6 +1154,25 @@ const JerseyColorsProvider: React.FC<{
         svg,
         viewBox,
       });
+    },
+    addCustomOverlay: (svg, viewBox) => {
+      const id = `overlay-${Date.now()}`;
+      dispatch({ type: "addCustomOverlay", id, svg, viewBox });
+    },
+    removeCustomOverlay: (id) => {
+      dispatch({ type: "removeCustomOverlay", id });
+    },
+    setActiveCustomOverlay: (id) => {
+      dispatch({ type: "setActiveCustomOverlay", id });
+    },
+    setCustomOverlayOrder: (ids) => {
+      dispatch({ type: "setCustomOverlayOrder", ids });
+    },
+    moveCustomOverlay: (id, direction) => {
+      dispatch({ type: "moveCustomOverlay", id, direction });
+    },
+    setCustomOverlayEnabled: (id, enabled) => {
+      dispatch({ type: "setCustomOverlayEnabled", id, enabled });
     },
     setCustomOverlayTransform: ({ x, y, scale, rotation }) => {
       dispatch({

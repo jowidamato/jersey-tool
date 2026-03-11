@@ -64,6 +64,7 @@ export const materialSymbolsIcons = [
   "double_arrow",
   "download",
   "draw",
+  "drag_indicator",
   "edit",
   "edit_note",
   "emoji_objects",

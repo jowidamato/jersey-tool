@@ -1,6 +1,7 @@
+import { MaterialIcon } from "@/components/MaterialIcon";
 import { useJerseyColors } from "@/context/JerseyContext";
-
-import { Button, Label, Slider, toast } from "@heroui/react";
+import { Button, Label, Slider, Switch, toast } from "@heroui/react";
+import { Reorder, useDragControls } from "framer-motion";
 import { useRef } from "react";
 
 const toPercent = (value: number) => `${Math.round(value * 100)}%`;
@@ -65,9 +66,20 @@ function extractSvgOverlay(svgText: string) {
   };
 }
 export function CustomOverlay() {
-  const { state, setCustomOverlay, setCustomOverlayTransform } =
-    useJerseyColors();
+  const {
+    state,
+    addCustomOverlay,
+    removeCustomOverlay,
+    setActiveCustomOverlay,
+    setCustomOverlayOrder,
+    setCustomOverlayEnabled,
+    setCustomOverlayTransform,
+  } = useJerseyColors();
   const overlayInputRef = useRef<HTMLInputElement>(null);
+  const selectedOverlay =
+    state.customOverlays.find(
+      (overlay) => overlay.id === state.customOverlayActiveId,
+    ) ?? state.customOverlays[0];
 
   return (
     <div className="flex flex-col gap-4 px-1">
@@ -83,7 +95,7 @@ export function CustomOverlay() {
           try {
             const text = await file.text();
             const extracted = extractSvgOverlay(text);
-            setCustomOverlay(true, extracted.content, extracted.viewBox);
+            addCustomOverlay(extracted.content, extracted.viewBox);
             toast("Custom overlay uploaded", {
               description: file.name,
             });
@@ -94,14 +106,36 @@ export function CustomOverlay() {
           }
         }}
       />
-      {state.customOverlaySvg ? (
+      {state.customOverlays.length ? (
+        <Reorder.Group
+          axis="y"
+          values={state.customOverlays.map((overlay) => overlay.id)}
+          onReorder={setCustomOverlayOrder}
+          className="flex flex-col gap-2"
+        >
+          {state.customOverlays.map((overlay, index) => (
+            <OverlayListItem
+              key={overlay.id}
+              overlay={overlay}
+              index={index}
+              isSelected={overlay.id === selectedOverlay?.id}
+              onSelect={() => setActiveCustomOverlay(overlay.id)}
+              onToggle={(selected) =>
+                setCustomOverlayEnabled(overlay.id, selected)
+              }
+              onRemove={() => removeCustomOverlay(overlay.id)}
+            />
+          ))}
+        </Reorder.Group>
+      ) : null}
+      {selectedOverlay ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
             <Slider
               minValue={-12}
               maxValue={12}
               step={0.5}
-              value={state.customOverlayX}
+              value={selectedOverlay.x}
               onChange={(value) =>
                 setCustomOverlayTransform({
                   x: Array.isArray(value) ? value[0] : value,
@@ -109,9 +143,7 @@ export function CustomOverlay() {
               }
             >
               <Label>X Offset</Label>
-              <Slider.Output>
-                {toSignedValue(state.customOverlayX)}
-              </Slider.Output>
+              <Slider.Output>{toSignedValue(selectedOverlay.x)}</Slider.Output>
               <Slider.Track>
                 <Slider.Fill />
                 <Slider.Thumb />
@@ -123,7 +155,7 @@ export function CustomOverlay() {
               minValue={-12}
               maxValue={12}
               step={0.5}
-              value={state.customOverlayY}
+              value={selectedOverlay.y}
               onChange={(value) =>
                 setCustomOverlayTransform({
                   y: Array.isArray(value) ? value[0] : value,
@@ -131,9 +163,7 @@ export function CustomOverlay() {
               }
             >
               <Label>Y Offset</Label>
-              <Slider.Output>
-                {toSignedValue(state.customOverlayY)}
-              </Slider.Output>
+              <Slider.Output>{toSignedValue(selectedOverlay.y)}</Slider.Output>
               <Slider.Track>
                 <Slider.Fill />
                 <Slider.Thumb />
@@ -145,7 +175,7 @@ export function CustomOverlay() {
               minValue={0.25}
               maxValue={2.5}
               step={0.01}
-              value={state.customOverlayScale}
+              value={selectedOverlay.scale}
               onChange={(value) =>
                 setCustomOverlayTransform({
                   scale: Array.isArray(value) ? value[0] : value,
@@ -153,9 +183,7 @@ export function CustomOverlay() {
               }
             >
               <Label>Scale</Label>
-              <Slider.Output>
-                {toPercent(state.customOverlayScale)}
-              </Slider.Output>
+              <Slider.Output>{toPercent(selectedOverlay.scale)}</Slider.Output>
               <Slider.Track>
                 <Slider.Fill />
                 <Slider.Thumb />
@@ -167,7 +195,7 @@ export function CustomOverlay() {
               minValue={-180}
               maxValue={180}
               step={1}
-              value={state.customOverlayRotation}
+              value={selectedOverlay.rotation}
               onChange={(value) =>
                 setCustomOverlayTransform({
                   rotation: Array.isArray(value) ? value[0] : value,
@@ -176,7 +204,7 @@ export function CustomOverlay() {
             >
               <Label>Rotation</Label>
               <Slider.Output>
-                {toSignedPercent(state.customOverlayRotation, 180)}
+                {toSignedPercent(selectedOverlay.rotation, 180)}
               </Slider.Output>
               <Slider.Track>
                 <Slider.Fill />
@@ -191,6 +219,9 @@ export function CustomOverlay() {
             Upload SVG text, logos, or shapes that should sit on the jersey
             body.
           </span>
+          <span className="text-xs text-red-500 text-center ">
+            Use with caution. Do not upload copyrighted material
+          </span>
         </div>
       )}
       <div
@@ -199,13 +230,13 @@ export function CustomOverlay() {
         onPointerDown={(event) => event.stopPropagation()}
       >
         {" "}
-        {state.customOverlaySvg ? (
+        {selectedOverlay ? (
           <Button
             variant="ghost"
             onClick={(event) => event.stopPropagation()}
-            onPress={() => setCustomOverlay(true, undefined, undefined)}
+            onPress={() => removeCustomOverlay(selectedOverlay.id)}
           >
-            Clear
+            Remove
           </Button>
         ) : null}
         <Button
@@ -213,9 +244,83 @@ export function CustomOverlay() {
           onClick={(event) => event.stopPropagation()}
           onPress={() => overlayInputRef.current?.click()}
         >
-          {state.customOverlaySvg ? "Replace SVG" : "Upload SVG"}
+          {selectedOverlay ? "Add SVG" : "Upload SVG"}
         </Button>
       </div>
     </div>
+  );
+}
+
+function OverlayListItem({
+  overlay,
+  index,
+  isSelected,
+  onSelect,
+  onToggle,
+  onRemove,
+}: {
+  overlay: {
+    id: string;
+    name: string;
+    enabled: boolean;
+    svg?: string;
+    viewBox?: string;
+  };
+  index: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onToggle: (selected: boolean) => void;
+  onRemove: () => void;
+}) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={overlay.id}
+      dragListener={false}
+      dragControls={dragControls}
+      className={`flex items-center gap-3 rounded-lg border px-3 py-2 bg-white dark:bg-black ${
+        isSelected
+          ? "border-black dark:border-white"
+          : "border-gray-200 dark:border-gray-700"
+      }`}
+    >
+      <button
+        type="button"
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        onClick={onSelect}
+      >
+        {overlay.svg ? (
+          <svg
+            viewBox={overlay.viewBox || "0 0 100 100"}
+            className="h-9 w-9"
+            aria-hidden="true"
+          >
+            <g dangerouslySetInnerHTML={{ __html: overlay.svg }} />
+          </svg>
+        ) : (
+          <span className="text-xs text-gray-400">SVG</span>
+        )}
+        <div className="min-w-0">
+          <div className="text-sm font-semibold">{`Overlay ${index + 1}`}</div>
+        </div>
+      </button>
+      <Switch
+        aria-label={`Toggle overlay ${index + 1}`}
+        isSelected={overlay.enabled}
+        onChange={onToggle}
+      />
+      <Button
+        isIconOnly
+        variant="ghost"
+        aria-label={`Reorder overlay ${index + 1}`}
+        onPointerDown={(event) => dragControls.start(event)}
+      >
+        <MaterialIcon name="drag_indicator" />
+      </Button>
+      <Button isIconOnly variant="ghost" onPress={onRemove}>
+        <MaterialIcon name="delete" />
+      </Button>
+    </Reorder.Item>
   );
 }

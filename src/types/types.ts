@@ -24,6 +24,18 @@ export type ColorToggle = {
 };
 export type Theme = { primary?: string; secondary?: string; tertiary?: string };
 
+export type CustomOverlayLayer = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  svg?: string;
+  viewBox?: string;
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+};
+
 export type JerseyColorState = {
   name: string;
   id?: number;
@@ -42,13 +54,8 @@ export type JerseyColorState = {
   horizontalStripesPreset?: HorizontalStripePreset;
   customShapePreset?: CustomShapePreset;
   sideStripePreset?: SideStripePreset;
-  customOverlayEnabled: boolean;
-  customOverlaySvg?: string;
-  customOverlayViewBox?: string;
-  customOverlayX: number;
-  customOverlayY: number;
-  customOverlayScale: number;
-  customOverlayRotation: number;
+  customOverlays: CustomOverlayLayer[];
+  customOverlayActiveId?: string;
   footballBackEnabled: boolean;
   footballBackName: string;
   footballBackNumber: string;
@@ -201,6 +208,8 @@ export type JerseyResponse = {
   customOverlayY?: number;
   customOverlayScale?: number;
   customOverlayRotation?: number;
+  customOverlays?: CustomOverlayLayer[];
+  customOverlayActiveId?: string;
   footballBackEnabled?: boolean;
   footballBackName?: string;
   footballBackNumber?: string;

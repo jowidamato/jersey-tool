@@ -2,7 +2,7 @@ import Base from "@/components/Jersey/base";
 import { useJerseyColors } from "@/context/JerseyContext";
 import Setting from "./Settings/Setting";
 import { darken } from "@/utils/colorFunctions";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { ShirtText } from "./ShirtText";
 import { CustomOverlay } from "./CustomOverlay";
 import { Settings } from "./Settings";
@@ -21,9 +21,11 @@ export function Content({
     | "rugby"
     | "handball";
 }) {
-  const { state, effective, setColor, setCustomOverlay, setFootballBack } =
+  const { state, effective, setColor, setFootballBack, setCustomOverlay } =
     useJerseyColors();
-  const overlayInputRef = useRef<HTMLInputElement>(null);
+  const [isOverlayOpen, setIsOverlayOpen] = useState(
+    state.customOverlays.length > 0,
+  );
 
   useEffect(() => {
     if (
@@ -46,6 +48,12 @@ export function Content({
     effective,
     setColor,
   ]);
+
+  useEffect(() => {
+    if (state.customOverlays.length > 0) {
+      setIsOverlayOpen(true);
+    }
+  }, [state.customOverlays.length]);
 
   const needsMainColors =
     variant === "formula-1"
@@ -108,19 +116,15 @@ export function Content({
       <Setting
         label="Custom Overlay"
         keys={[]}
-        isSelected={state.customOverlayEnabled}
+        isSelected={isOverlayOpen || state.customOverlays.length > 0}
         isDisabled={needsMainColors}
         onSelectedChange={(checked) => {
           if (needsMainColors) return;
           if (checked) {
-            setCustomOverlay(
-              true,
-              state.customOverlaySvg,
-              state.customOverlayViewBox,
-            );
-            overlayInputRef.current?.click();
+            setIsOverlayOpen(true);
             return;
           }
+          setIsOverlayOpen(false);
           setCustomOverlay(false, undefined, undefined);
         }}
         icon={

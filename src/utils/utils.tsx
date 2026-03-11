@@ -132,13 +132,7 @@ export function toBaseProps(
     sleeveStripeTertiaryColor: eff("sleeveStripeTertiaryColor"),
     sideStripePrimaryColor: eff("sideStripePrimaryColor"),
     sideStripeSecondaryColor: eff("sideStripeSecondaryColor"),
-    customOverlayEnabled: state.customOverlayEnabled,
-    customOverlaySvg: state.customOverlaySvg,
-    customOverlayViewBox: state.customOverlayViewBox,
-    customOverlayX: state.customOverlayX,
-    customOverlayY: state.customOverlayY,
-    customOverlayScale: state.customOverlayScale,
-    customOverlayRotation: state.customOverlayRotation,
+    customOverlays: state.customOverlays ?? [],
     footballBackEnabled: state.footballBackEnabled,
     footballBackName: state.footballBackName,
     footballBackNumber: state.footballBackNumber,
@@ -212,13 +206,26 @@ export function configToState(
       secondary: coerce(themeSecondary),
       tertiary: coerce(themeTertiary),
     },
-    customOverlayEnabled: cfg?.customOverlayEnabled ?? false,
-    customOverlaySvg: coerce(cfg?.customOverlaySvg),
-    customOverlayViewBox: coerce(cfg?.customOverlayViewBox),
-    customOverlayX: cfg?.customOverlayX ?? 0,
-    customOverlayY: cfg?.customOverlayY ?? 0,
-    customOverlayScale: cfg?.customOverlayScale ?? 1,
-    customOverlayRotation: cfg?.customOverlayRotation ?? 0,
+    customOverlays:
+      cfg?.customOverlays ??
+      (cfg?.customOverlaySvg
+        ? [
+            {
+              id: "overlay-legacy",
+              name: "Overlay 1",
+              enabled: cfg?.customOverlayEnabled ?? true,
+              svg: coerce(cfg?.customOverlaySvg),
+              viewBox: coerce(cfg?.customOverlayViewBox),
+              x: cfg?.customOverlayX ?? 0,
+              y: cfg?.customOverlayY ?? 0,
+              scale: cfg?.customOverlayScale ?? 1,
+              rotation: cfg?.customOverlayRotation ?? 0,
+            },
+          ]
+        : []),
+    customOverlayActiveId:
+      cfg?.customOverlayActiveId ??
+      (cfg?.customOverlaySvg ? "overlay-legacy" : undefined),
     footballBackEnabled: cfg?.footballBackEnabled ?? false,
     footballBackName: cfg?.footballBackName ?? "",
     footballBackNumber: cfg?.footballBackNumber ?? "",
@@ -1808,13 +1815,8 @@ export function downloadJson(state: JerseyColorState) {
   } = baseProps;
   const stateExport = {
     ...exportableBaseProps,
-    customOverlayEnabled: state.customOverlayEnabled,
-    customOverlaySvg: state.customOverlaySvg || "",
-    customOverlayViewBox: state.customOverlayViewBox || "",
-    customOverlayX: state.customOverlayX,
-    customOverlayY: state.customOverlayY,
-    customOverlayScale: state.customOverlayScale,
-    customOverlayRotation: state.customOverlayRotation,
+    customOverlays: state.customOverlays ?? [],
+    customOverlayActiveId: state.customOverlayActiveId || "",
     footballBackEnabled: state.footballBackEnabled,
     footballBackName: state.footballBackName,
     footballBackNumber: state.footballBackNumber,

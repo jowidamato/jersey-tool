@@ -1,4 +1,5 @@
 import type {
+  CustomOverlayLayer,
   HorizontalStripePreset,
   CustomShapePreset,
   SideStripePreset,
@@ -42,6 +43,7 @@ type JerseyProps = React.SVGProps<SVGSVGElement> & {
   customOverlayY?: number;
   customOverlayScale?: number;
   customOverlayRotation?: number;
+  customOverlays?: CustomOverlayLayer[];
   footballBackEnabled?: boolean;
   footballBackName?: string;
   footballBackNumber?: string;
@@ -99,6 +101,7 @@ const Base: React.FC<JerseyProps> = ({
   customOverlayY = 0,
   customOverlayScale = 1,
   customOverlayRotation = 0,
+  customOverlays,
   footballBackEnabled = false,
   footballBackName = "",
   footballBackNumber = "",
@@ -218,33 +221,73 @@ const Base: React.FC<JerseyProps> = ({
           ? { x: 8, y: 8, width: 18, height: 24 }
           : { x: 8, y: 8, width: 20, height: 24 };
 
-  const overlayViewBoxParts =
-    customOverlayViewBox?.trim().split(/\s+/).map(Number) ?? [];
-  const [vbX = 0, vbY = 0, vbWidth = 100, vbHeight = 100] =
-    overlayViewBoxParts.length === 4 &&
-    overlayViewBoxParts.every((value) => Number.isFinite(value))
-      ? overlayViewBoxParts
-      : [0, 0, 100, 100];
-  const overlayScale = Math.min(
-    overlayBox.width / vbWidth,
-    overlayBox.height / vbHeight,
-  );
-  const fittedWidth = vbWidth * overlayScale;
-  const fittedHeight = vbHeight * overlayScale;
-  const overlayTranslateX = overlayBox.x + (overlayBox.width - fittedWidth) / 2;
-  const overlayTranslateY =
-    overlayBox.y + (overlayBox.height - fittedHeight) / 2;
-  const safeUserScale =
-    Number.isFinite(customOverlayScale) && customOverlayScale > 0
-      ? customOverlayScale
-      : 1;
-  const safeUserX = Number.isFinite(customOverlayX) ? customOverlayX : 0;
-  const safeUserY = Number.isFinite(customOverlayY) ? customOverlayY : 0;
-  const safeUserRotation = Number.isFinite(customOverlayRotation)
-    ? customOverlayRotation
-    : 0;
-  const overlayCenterX = overlayTranslateX + fittedWidth / 2 + safeUserX;
-  const overlayCenterY = overlayTranslateY + fittedHeight / 2 + safeUserY;
+  const resolvedOverlays =
+    customOverlays && customOverlays.length
+      ? customOverlays.filter((overlay) => overlay.enabled && overlay.svg)
+      : customOverlayEnabled && customOverlaySvg
+        ? [
+            {
+              id: "overlay-legacy",
+              name: "Overlay",
+              enabled: true,
+              svg: customOverlaySvg,
+              viewBox: customOverlayViewBox,
+              x: customOverlayX,
+              y: customOverlayY,
+              scale: customOverlayScale,
+              rotation: customOverlayRotation,
+            },
+          ]
+        : [];
+  const renderOverlay = (overlay: {
+    svg?: string;
+    viewBox?: string;
+    x?: number;
+    y?: number;
+    scale?: number;
+    rotation?: number;
+    id: string;
+  }) => {
+    const overlayViewBoxParts =
+      overlay.viewBox?.trim().split(/\s+/).map(Number) ?? [];
+    const [vbX = 0, vbY = 0, vbWidth = 100, vbHeight = 100] =
+      overlayViewBoxParts.length === 4 &&
+      overlayViewBoxParts.every((value) => Number.isFinite(value))
+        ? overlayViewBoxParts
+        : [0, 0, 100, 100];
+    const overlayScale = Math.min(
+      overlayBox.width / vbWidth,
+      overlayBox.height / vbHeight,
+    );
+    const fittedWidth = vbWidth * overlayScale;
+    const fittedHeight = vbHeight * overlayScale;
+    const overlayTranslateX =
+      overlayBox.x + (overlayBox.width - fittedWidth) / 2;
+    const overlayTranslateY =
+      overlayBox.y + (overlayBox.height - fittedHeight) / 2;
+    const safeUserScale =
+      Number.isFinite(overlay.scale) && (overlay.scale ?? 0) > 0
+        ? (overlay.scale as number)
+        : 1;
+    const safeUserX = Number.isFinite(overlay.x) ? (overlay.x as number) : 0;
+    const safeUserY = Number.isFinite(overlay.y) ? (overlay.y as number) : 0;
+    const safeUserRotation = Number.isFinite(overlay.rotation)
+      ? (overlay.rotation as number)
+      : 0;
+    const overlayCenterX = overlayTranslateX + fittedWidth / 2 + safeUserX;
+    const overlayCenterY = overlayTranslateY + fittedHeight / 2 + safeUserY;
+    return (
+      <g
+        key={overlay.id}
+        transform={`translate(${overlayCenterX} ${overlayCenterY}) rotate(${safeUserRotation}) scale(${safeUserScale}) translate(${-fittedWidth / 2} ${-fittedHeight / 2})`}
+      >
+        <g
+          transform={`scale(${overlayScale}) translate(${-vbX} ${-vbY})`}
+          dangerouslySetInnerHTML={{ __html: overlay.svg ?? "" }}
+        />
+      </g>
+    );
+  };
 
   if (isAmericanFootball) {
     return (
@@ -278,16 +321,7 @@ const Base: React.FC<JerseyProps> = ({
           d="M30.2557 10.365C30.5386 10.2382 30.8776 10.354 31.0077 10.6296C31.1434 10.9053 31.019 11.2362 30.7362 11.363L26.2333 13.4304L28.66 19.6384L36.1961 18.1111C36.4789 18.0561 36.7676 18.216 36.8524 18.4861L37.4803 20.4597C37.4816 20.4638 37.4811 20.4683 37.4823 20.4724C38.6748 23.5926 37.4458 27.2779 37.3895 27.4314C37.3103 27.6627 37.1406 27.8112 36.9032 27.8113H36.8573C36.8133 27.8113 36.7321 27.7956 36.7274 27.7947L30.7528 26.405C30.5833 26.3663 30.4474 26.2565 30.3739 26.1023L28.785 22.7986C25.581 23.293 23.9821 23.5413 23.8172 23.5417H23.7049C23.6088 23.5417 23.405 23.5411 19.5018 22.3503C19.3434 22.3007 19.2181 22.1906 19.1503 22.0417C19.0825 21.8929 19.0885 21.727 19.162 21.5837L21.8378 16.2253C21.8532 16.1915 21.8751 16.1612 21.8993 16.1326C21.9064 16.1234 21.9141 16.1148 21.9217 16.1062C21.9259 16.1019 21.9301 16.0967 21.9344 16.0925L25.0965 12.78C25.1475 12.7249 25.2095 12.6803 25.2831 12.6472L30.2557 10.365ZM29.9286 22.5896L31.2733 25.3913L36.4559 26.5925C36.714 25.6067 37.1758 23.3032 36.5585 21.2595L29.9286 22.5896ZM20.4745 21.4851H20.4686C21.8094 21.8931 23.3995 22.3617 23.7333 22.4333C24.0785 22.3943 26.475 22.0281 28.3202 21.7458L27.9305 20.8152H27.1327C26.9631 20.8152 26.8046 20.7436 26.6971 20.6169L22.5516 17.3171L20.4745 21.4851ZM29.0858 20.6667L29.4559 21.5515L36.2128 20.1951L35.9247 19.28L29.0858 20.6667ZM23.1688 16.4128L27.3924 19.7126H27.4852L25.3114 14.1638L23.1688 16.4128Z"
           fill={neckCircleColor ?? "#9D7D2D"}
         />
-        {customOverlayEnabled && customOverlaySvg ? (
-          <g
-            transform={`translate(${overlayCenterX} ${overlayCenterY}) rotate(${safeUserRotation}) scale(${safeUserScale}) translate(${-fittedWidth / 2} ${-fittedHeight / 2})`}
-          >
-            <g
-              transform={`scale(${overlayScale}) translate(${-vbX} ${-vbY})`}
-              dangerouslySetInnerHTML={{ __html: customOverlaySvg }}
-            />
-          </g>
-        ) : null}
+        {resolvedOverlays.map(renderOverlay)}
         <circle cx="14.2656" cy="20.7013" r="2.0498" fill="#D8E2ED" />
       </svg>
     );
@@ -324,16 +358,7 @@ const Base: React.FC<JerseyProps> = ({
           d="M22.5002 18.4997C14.5002 17.4997 13.2927 9.71939 16.0002 10.4997C18.7077 11.28 27.7729 10.9271 29.3899 10.5387C29.4985 10.8446 29.5461 11.0221 29.5461 11.0221V11.0163C30.4839 13.4577 30.9812 14.9493 31.4729 17.8493C30.6121 18.3027 26.9913 19.061 22.5002 18.4997Z"
           fill={neckCircleColor ?? darker}
         />
-        {customOverlayEnabled && customOverlaySvg ? (
-          <g
-            transform={`translate(${overlayCenterX} ${overlayCenterY}) rotate(${safeUserRotation}) scale(${safeUserScale}) translate(${-fittedWidth / 2} ${-fittedHeight / 2})`}
-          >
-            <g
-              transform={`scale(${overlayScale}) translate(${-vbX} ${-vbY})`}
-              dangerouslySetInnerHTML={{ __html: customOverlaySvg }}
-            />
-          </g>
-        ) : null}
+        {resolvedOverlays.map(renderOverlay)}
       </svg>
     );
   }
@@ -636,16 +661,7 @@ const Base: React.FC<JerseyProps> = ({
             variant,
           )}
 
-        {customOverlayEnabled && customOverlaySvg ? (
-          <g
-            transform={`translate(${overlayCenterX} ${overlayCenterY}) rotate(${safeUserRotation}) scale(${safeUserScale}) translate(${-fittedWidth / 2} ${-fittedHeight / 2})`}
-          >
-            <g
-              transform={`scale(${overlayScale}) translate(${-vbX} ${-vbY})`}
-              dangerouslySetInnerHTML={{ __html: customOverlaySvg }}
-            />
-          </g>
-        ) : null}
+        {resolvedOverlays.map(renderOverlay)}
 
         {isBasketball || isHockey ? null : shoulderPanelColor ? (
           <>
